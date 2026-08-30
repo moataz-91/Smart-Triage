@@ -7,7 +7,14 @@ const fs = require('fs'); // للتعامل مع قاعدة البيانات ا�
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// 🟢 التعديل السحري هنا: إضافة تصريح الـ CORS للسماح بالاتصال من اللاب توب أو Cloudflare
+const io = new Server(server, {
+    cors: {
+        origin: "*", // السماح بجميع الروابط
+        methods: ["GET", "POST"]
+    }
+});
 
 app.use(express.static('public'));
 
@@ -315,3 +322,5 @@ server.listen(PORT, () => {
     console.log(`🚀 Smart-AI-Triage Server is running isolated on http://localhost:${PORT}`);
     console.log(`🔍 للفحص والتأكد من عمل الـ AI افتح: http://localhost:${PORT}/test-ai`);
 });
+
+
