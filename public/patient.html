@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المساعد الطبي الذكي - المعاينة الفورية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* 🟢 حماية الواجهة: منع تحديد ونسخ النصوص */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        body { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); height: 100vh; display: flex; justify-content: center; align-items: center; padding: 15px; transition: 0.3s; user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        input, select, textarea { user-select: auto; -webkit-user-select: auto; -ms-user-select: auto; } /* السماح بالكتابة فقط في الحقول */
+        
+        .chat-container { width: 100%; max-width: 500px; height: 90vh; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0; position: relative; }
+        
+        /* رأس الدردشة */
+        .chat-header { background: #0284c7; color: white; padding: 15px 20px; text-align: center; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .chat-header h2 { font-size: 1.3rem; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .status-badge { font-size: 0.8rem; background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 15px; display: inline-block; }
+        
+        /* منطقة الرسائل */
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f8fafc; }
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.5; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .ai-msg { background: #ffffff; color: #1e293b; align-self: flex-start; border-bottom-right-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        html[dir="ltr"] .ai-msg { align-self: flex-start; border-bottom-left-radius: 2px; border-bottom-right-radius: 15px; }
+        
+        .user-msg { background: #0284c7; color: white; align-self: flex-end; border-bottom-left-radius: 2px; box-shadow: 0 2px 4px rgba(2,132,199,0.2); }
+        html[dir="ltr"] .user-msg { align-self: flex-end; border-bottom-right-radius: 2px; border-bottom-left-radius: 15px; }
+        
+        /* مؤشر الكتابة */
+        .typing { display: none; align-self: flex-start; background: #e2e8f0; padding: 8px 15px; border-radius: 15px; font-size: 0.85rem; color: #64748b; }
+        
+        /* إطار الإدخال والأزرار */
+        .chat-input-area { padding: 15px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
+        .input-row { display: flex; gap: 10px; align-items: center; width: 100%; }
+        .chat-input-area input { flex: 1; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 25px; outline: none; font-size: 0.95rem; transition: border 0.3s; }
+        .chat-input-area input:focus { border-color: #0284c7; }
+        
+        .btn { border: none; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; font-size: 1.2rem; flex-shrink: 0; }
+        .btn-send { background: #0284c7; color: white; }
+        .btn-send:hover { background: #0369a1; transform: scale(1.05); }
+        
+        /* زر المايكروفون */
+        .btn-mic { background: #f1f5f9; color: #475569; }
+        .btn-mic.listening { background: #ef4444; color: white; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* زرار إنهاء المحادثة وإرسال التقرير النهائي */
+        .btn-finish-triage { width: 100%; background: #10b981; color: white; border: none; padding: 10px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(16,185,129,0.2); font-family: inherit; }
+        .btn-finish-triage:hover { background: #059669; }
+
+        /* نافذة الاستقبال الذكية (Intake Modal) */
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 100; display: flex; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); transition: 0.3s; }
+        .modal-card { background: white; width: 100%; max-width: 420px; padding: 25px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); text-align: center; max-height: 90vh; overflow-y: auto; }
+        .modal-card h3 { color: #0284c7; font-size: 1.3rem; margin-bottom: 10px; }
+        .modal-card p { color: #64748b; font-size: 0.85rem; margin-bottom: 20px; }
+        .form-group { text-align: right; margin-bottom: 12px; }
+        html[dir="ltr"] .form-group { text-align: left; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #334155; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.9rem; font-family: inherit; }
+        .btn-start { width: 100%; background: #0284c7; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: 0.2s; font-family: inherit; }
+        .btn-start:hover { background: #0369a1; transform: translateY(-2px); }
+
+        /* خريطة جسم الإنسان التفاعلية */
+        .body-map-btn { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit; }
+        .body-map-btn:hover { background: #dcfce7; }
+        .body-map-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 90; justify-content: center; align-items: center; padding: 20px; }
+        .body-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .body-part-tag { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #334155; transition: 0.2s; font-size: 0.9rem; }
+        .body-part-tag:hover { background: #0284c7; color: white; border-color: #0284c7; }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="modal-overlay" id="intake-modal">
+            <div class="modal-card">
+                <h3 id="txt-intake-title">🏥 التسجيل السريع لملف المريض</h3>
+                <p id="txt-intake-sub">يرجى إدخال البيانات التالية لمساعدة الذكاء الاصطناعي والطبيب في تشخيص حالتك بدقة وأمان:</p>
+                
+                <div class="form-group">
+                    <label id="lbl-phone">📱 رقم الهاتف (للمتابعة واسترجاع الملف):</label>
+                    <input type="tel" id="patient-phone" placeholder="مثال: 01012345678" required>
+                </div>
+                <div class="form-group">
+                    <label id="lbl-name">👤 الاسم بالكامل:</label>
+                    <input type="text" id="patient-name" placeholder="مثال: أحمد محمد علي" required>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label id="lbl-age">🎂 السن:</label>
+                        <input type="number" id="patient-age" placeholder="مثال: 35">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label id="lbl-gender">⚧ الجنس:</label>
+                        <select id="patient-gender">
+                            <option value="ذكر" id="opt-male">ذكر</option>
+                            <option value="أنثى" id="opt-female">أنثى</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label id="lbl-chronic">💊 أمراض مزمنة (إن وجدت):</label>
+                    <input type="text" id="patient-chronic" placeholder="مثال: ضغط، سكر، ربو (أو اكتب: لا يوجد)">
+                </div>
+                <div class="form-group">
+                    <label id="lbl-allergies">⚠️ حساسية تجاه أدوية معينة:</label>
+                    <input type="text" id="patient-allergies" placeholder="مثال: حساسية بنسيلين (أو اكتب: لا يوجد)">
+                </div>
+                
+                <button class="btn-start" id="start-triage-btn">🚀 ابدأ الفحص الذكي الآن</button>
+            </div>
+        </div>
+
+        <div class="body-map-modal" id="body-map-modal">
+            <div class="modal-card">
+                <h3 id="txt-map-title">🧍‍♂️ حدد مكان الألم على جسم الإنسان</h3>
+                <p id="txt-map-sub">اضغط على المنطقة التي تؤلمك لتوجيه التحليل الطبي فوراً:</p>
+                <div class="body-grid">
+                    <div class="body-part-tag" id="part-head" onclick="selectBodyPart('🧠 الرأس والصداع / الأعصاب', '🧠 Head & Neck / Neurology')">🧠 الرأس والرقبة</div>
+                    <div class="body-part-tag" id="part-chest" onclick="selectBodyPart('🫁 الصدر والتنفس / الرئة', '🫁 Chest & Respiration')">🫁 الصدر والتنفس</div>
+                    <div class="body-part-tag" id="part-heart" onclick="selectBodyPart('❤️ القلب وضربات النبض', '❤️ Heart & Palpitations')">❤️ القلب والنبض</div>
+                    <div class="body-part-tag" id="part-abdomen" onclick="selectBodyPart('🍔 البطن والمعدة / الهضم', '🍔 Abdomen & Digestion')">🍔 البطن والمعدة</div>
+                    <div class="body-part-tag" id="part-back" onclick="selectBodyPart('🦴 الظهر والعمود الفقري', '🦴 Back & Spine')">🦴 الظهر والفقرات</div>
+                    <div class="body-part-tag" id="part-limbs" onclick="selectBodyPart('💪 الأطراف والمفاصل / العظام', '💪 Limbs, Joints & Bones')">💪 المفاصل والعظام</div>
+                </div>
+                <button class="btn-start" id="btn-map-cancel" style="background: #64748b; margin-top: 15px;" onclick="document.getElementById('body-map-modal').style.display='none'">❌ إلغاء</button>
+            </div>
+        </div>
+
+        <div class="chat-header">
+            <h2 id="txt-chat-title">🤖 المساعد الطبي التمهيدي</h2>
+            <div style="margin-bottom: 6px;">
+                <div class="status-badge" id="connection-status">🟢 متصل بالعيادة لحظياً</div>
+                <button id="tts-toggle" class="status-badge" style="cursor: pointer; border: none; background: rgba(255,255,255,0.3); color: white; margin-right: 5px; font-family: inherit;">🔊 الناطق الصوتي: مفعل</button>
+            </div>
+            <div style="margin-top: 4px;">
+                <select id="lang-selector" style="padding: 4px 12px; border-radius: 12px; border: none; background: rgba(255,255,255,0.9); color: #0f172a; font-size: 0.85rem; font-weight: bold; outline: none; cursor: pointer; font-family: inherit;">
+                    <option value="ar-EG">🇪🇬 العربية (عامية مصرية / رسمي)</option>
+                    <option value="ar-SA">🇸🇦 العربية (خليجية / سعودية)</option>
+                    <option value="en-US">🇺🇸 English (United States)</option>
+                    <option value="fr-FR">🇫🇷 Français (France)</option>
+                    <option value="es-ES">🇪🇸 Español (Spain)</option>
+                    <option value="de-DE">🇩🇪 Deutsch (Germany)</option>
+                </select>
+            </div>
+            <div style="margin-top: 6px; display: flex; justify-content: center; gap: 8px; align-items: center;">
+                <span id="mrn-badge" style="background: #0f172a; color: #38bdf8; font-size: 0.75rem; padding: 4px 10px; border-radius: 10px; font-weight: bold; display: none;">🪪 MRN: جاري التوليد...</span>
+                <button class="body-map-btn" id="btn-open-map" onclick="document.getElementById('body-map-modal').style.display='flex'">🧍‍♂️ حدد مكان الألم على الجسم</button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="typing" id="typing-indicator">المساعد الذكي يحلل الأعراض ويكتب...</div>
+        </div>
+
+        <div class="chat-input-area" id="input-area-container">
+            <div class="input-row">
+                <button class="btn btn-mic" id="mic-btn" title="تحدث بصوتك">🎙️</button>
+                <input type="text" id="user-input" placeholder="اكتب أعراضك هنا أو اضغط على المايك للتحدث..." autocomplete="off">
+                <button class="btn btn-send" id="send-btn" title="إرسال">🚀</button>
+            </div>
+            <button class="btn-finish-triage" id="finish-triage-btn">🏁 إنهاء المحادثة وإرسال التقرير النهائي للطبيب</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // 🟢 سكريبت الحماية من السرقة (Anti-Theft Protection)
+        document.addEventListener('contextmenu', event => event.preventDefault()); 
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F12' || 
+               (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) || 
+               (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+                e.preventDefault();
+            }
+        });
+
+        const socket = io("http://78.47.133.206:4000");
+
+        const messagesContainer = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const mrnBadge = document.getElementById('mrn-badge');
+        const langSelector = document.getElementById('lang-selector');
+
+        let selectedBodyMapArea = "";
+        let currentSessionMRN = null;
+        let currentUI = 'ar'; 
+
+        // 🟢 قاموس الترجمة الفورية الشامل لجميع اللغات (i18n Patient UI Dictionary)
+        const i18n = {
+            ar: {
+                dir: "rtl",
+                chatTitle: "🤖 المساعد الطبي التمهيدي",
+                connStatus: "🟢 متصل بالعيادة لحظياً",
+                ttsOn: "🔊 الناطق الصوتي: مفعل",
+                ttsOff: "🔇 الناطق الصوتي: معطل",
+                openMap: "🧍‍♂️ حدد مكان الألم على الجسم",
+                intakeTitle: "🏥 التسجيل السريع لملف المريض",
+                intakeSub: "يرجى إدخال البيانات التالية لمساعدة الذكاء الاصطناعي والطبيب في تشخيص حالتك بدقة وأمان:",
+                lblPhone: "📱 رقم الهاتف (للمتابعة واسترجاع الملف):", phPhone: "مثال: 01012345678",
+                lblName: "👤 الاسم بالكامل:", phName: "مثال: أحمد محمد علي",
+                lblAge: "🎂 السن:", phAge: "مثال: 35",
+                lblGender: "⚧ الجنس:", optMale: "ذكر", optFemale: "أنثى",
+                lblChronic: "💊 أمراض مزمنة (إن وجدت):", phChronic: "مثال: ضغط، سكر، ربو (أو اكتب: لا يوجد)",
+                lblAllergies: "⚠️ حساسية تجاه أدوية معينة:", phAllergies: "مثال: حساسية بنسيلين (أو اكتب: لا يوجد)",
+                btnStart: "🚀 ابدأ الفحص الذكي الآن",
+                mapTitle: "🧍‍♂️ حدد مكان الألم على جسم الإنسان",
+                mapSub: "اضغط على المنطقة التي تؤلمك لتوجيه التحليل الطبي فوراً:",
+                partHead: "🧠 الرأس والرقبة", partChest: "🫁 الصدر والتنفس", partHeart: "❤️ القلب والنبض",
+                partAbdomen: "🍔 البطن والمعدة", partBack: "🦴 الظهر والفقرات", partLimbs: "💪 المفاصل والعظام",
+                mapCancel: "❌ إلغاء",
+                phInput: "اكتب أعراضك هنا أو اضغط على المايك للتحدث...",
+                phListening: "جاري الاستماع... تحدث الآن 🎧",
+                phMicError: "حدث خطأ في المايكروفون، حاول الكتابة...",
+                btnFinish: "🏁 إنهاء المحادثة وإرسال التقرير النهائي للطبيب",
+                msgWelcome: "أهلاً بحضرتك يا فندم في النظام الذكي للعيادة. ألف سلامة عليك.. ممكن تحكيلي بتشتكي من إيه النهارده أو إيه الأعراض اللي حاسس بيها؟",
+                typing: "المساعد الذكي يحلل الأعراض ويكتب...",
+                confirmFinish: "هل انتهيت من ذكر كافة الأعراض وترغب في إرسال التقرير النهائي الآن إلى الطبيب؟",
+                msgFinished: "🏁 قمت بإنهاء المحادثة وإرسال التقرير النهائي للطبيب المختص.",
+                closedTitle: "✅ تم إرسال تقريرك السريري بنجاح إلى الطبيب!",
+                closedSub: "يرجى الانتظار في صالة الاستقبال حتى يتم مناداة اسمك للدخول إلى غرفة الكشف.",
+                btnReset: "🔄 بدء فحص لمريض جديد (مسح الذاكرة)",
+                confirmReset: "هل أنت متأكد من رغبتك في مسح الجلسة الحالية والبدء لمريض جديد؟"
+            },
+            en: {
+                dir: "ltr",
+                chatTitle: "🤖 Preliminary Medical Assistant",
+                connStatus: "🟢 Connected Live to Clinic",
+                ttsOn: "🔊 Voice Reader: ON",
+                ttsOff: "🔇 Voice Reader: OFF",
+                openMap: "🧍‍♂️ Select Pain Area on Body",
+                intakeTitle: "🏥 Quick Patient Intake Registration",
+                intakeSub: "Please enter your details to help the AI and doctor diagnose accurately and safely:",
+                lblPhone: "📱 Phone Number (For file retrieval):", phPhone: "e.g., 01012345678",
+                lblName: "👤 Full Name:", phName: "e.g., John Doe",
+                lblAge: "🎂 Age:", phAge: "e.g., 35",
+                lblGender: "⚧ Gender:", optMale: "Male", optFemale: "Female",
+                lblChronic: "💊 Chronic Diseases (if any):", phChronic: "e.g., Hypertension, Diabetes, Asthma (or: None)",
+                lblAllergies: "⚠️ Medication Allergies:", phAllergies: "e.g., Penicillin allergy (or: None)",
+                btnStart: "🚀 Start AI Triage Now",
+                mapTitle: "🧍‍♂️ Select Pain Location on Body Map",
+                mapSub: "Click on the area that hurts to route your clinical analysis immediately:",
+                partHead: "🧠 Head & Neck", partChest: "🫁 Chest & Lungs", partHeart: "❤️ Heart & Palpitations",
+                partAbdomen: "🍔 Abdomen & Digestion", partBack: "🦴 Back & Spine", partLimbs: "💪 Limbs & Joints",
+                mapCancel: "❌ Cancel",
+                phInput: "Type your symptoms here or click mic to speak...",
+                phListening: "Listening in selected language... speak now 🎧",
+                phMicError: "Microphone error, please try typing...",
+                btnFinish: "🏁 Finish Conversation & Send Final Report to Doctor",
+                msgWelcome: "Hello and welcome to the Clinic AI System. We wish you a speedy recovery. Could you please describe your symptoms or what is bothering you today?",
+                typing: "AI Assistant is analyzing symptoms and typing...",
+                confirmFinish: "Have you finished detailing all your symptoms and wish to send the final report to the doctor now?",
+                msgFinished: "🏁 You have finished the session and sent the final clinical report to the attending doctor.",
+                closedTitle: "✅ Your clinical report has been sent successfully to the doctor!",
+                closedSub: "Please wait in the reception area until your name is called for the examination room.",
+                btnReset: "🔄 Start Triage for New Patient (Clear Memory)",
+                confirmReset: "Are you sure you want to clear the current session and start for a new patient?"
+            },
+            fr: {
+                dir: "ltr",
+                chatTitle: "🤖 Assistant Médical Préliminaire",
+                connStatus: "🟢 Connecté en direct",
+                ttsOn: "🔊 Lecteur Vocale: ACTIF", ttsOff: "🔇 Lecteur Vocale: MUET",
+                openMap: "🧍‍♂️ Localiser la douleur",
+                intakeTitle: "🏥 Enregistrement Rapide du Patient",
+                intakeSub: "Veuillez entrer vos coordonnées pour aider l'IA et le médecin:",
+                lblPhone: "📱 Numéro de téléphone:", phPhone: "ex: 01012345678",
+                lblName: "👤 Nom Complet:", phName: "ex: Jean Dupont", lblAge: "🎂 Âge:", phAge: "ex: 35",
+                lblGender: "⚧ Sexe:", optMale: "Homme", optFemale: "Femme",
+                lblChronic: "💊 Maladies Chroniques:", phChronic: "ex: Diabète, Hypertension (ou: Aucun)",
+                lblAllergies: "⚠️ Allergies:", phAllergies: "ex: Pénicilline (ou: Aucun)",
+                btnStart: "🚀 Commencer le Triage IA",
+                mapTitle: "🧍‍♂️ Localiser la douleur sur le corps",
+                mapSub: "Cliquez sur la zone douloureuse:",
+                partHead: "🧠 Tête et Cou", partChest: "🫁 Poitrine", partHeart: "❤️ Cœur",
+                partAbdomen: "🍔 Abdomen", partBack: "🦴 Dos et Colonne", partLimbs: "💪 Articulations et Membres",
+                mapCancel: "❌ Annuler",
+                phInput: "Écrivez vos symptômes ici ou parlez...", phListening: "Écoute en cours... parlez 🎧",
+                phMicError: "Erreur microphone...", btnFinish: "🏁 Terminer et Envoyer le Rapport au Médecin",
+                msgWelcome: "Bonjour et bienvenue. Comment pouvons-nous vous aider aujourd'hui? Quels sont vos symptômes?",
+                typing: "L'assistant analyse et écrit...", confirmFinish: "Voulez-vous envoyer le rapport final au médecin?",
+                msgFinished: "🏁 Session terminée et rapport envoyé.", closedTitle: "✅ Rapport envoyé avec succès!",
+                closedSub: "Veuillez patienter en salle d'attente.", btnReset: "🔄 Nouveau Patient (Effacer)", confirmReset: "Effacer et recommencer?"
+            },
+            es: {
+                dir: "ltr",
+                chatTitle: "🤖 Asistente Médico Preliminar",
+                connStatus: "🟢 Conectado en vivo",
+                ttsOn: "🔊 Lector Voz: ACTIVO", ttsOff: "🔇 Lector Voz: SILENCIO",
+                openMap: "🧍‍♂️ Seleccionar Zona de Dolor",
+                intakeTitle: "🏥 Registro Rápido del Paciente",
+                intakeSub: "Por favor ingrese sus datos para ayudar a la IA y al médico:",
+                lblPhone: "📱 Teléfono:", phPhone: "ej: 01012345678",
+                lblName: "👤 Nombre Completo:", phName: "ej: Juan Pérez", lblAge: "🎂 Edad:", phAge: "ej: 35",
+                lblGender: "⚧ Género:", optMale: "Hombre", optFemale: "Mujer",
+                lblChronic: "💊 Enfermedades Crónicas:", phChronic: "ej: Hipertensión (o: Ninguno)",
+                lblAllergies: "⚠️ Alergias:", phAllergies: "ej: Penicilina (o: Ninguno)",
+                btnStart: "🚀 Iniciar Triage IA",
+                mapTitle: "🧍‍♂️ Ubicar dolor en el cuerpo", mapSub: "Haga clic en el área que le duele:",
+                partHead: "🧠 Cabeza y Cuello", partChest: "🫁 Pecho y Pulmones", partHeart: "❤️ Corazón",
+                partAbdomen: "🍔 Abdomen", partBack: "🦴 Espalda", partLimbs: "💪 Extremidades",
+                mapCancel: "❌ Cancelar", phInput: "Escriba sus síntomas o hable...", phListening: "Escuchando... hable ahora 🎧",
+                phMicError: "Error de micrófono...", btnFinish: "🏁 Finalizar y Enviar Reporte al Médico",
+                msgWelcome: "Hola y bienvenido. ¿Cuáles son sus síntomas o en qué podemos ayudarle hoy?",
+                typing: "El asistente está analizando...", confirmFinish: "¿Desea enviar el reporte final al médico?",
+                msgFinished: "🏁 Sesión finalizada y reporte enviado.", closedTitle: "✅ Reporte enviado con éxito!",
+                closedSub: "Por favor espere en la sala de recepción.", btnReset: "🔄 Nuevo Paciente (Borrar)", confirmReset: "¿Borrar y empezar de nuevo?"
+            },
+            de: {
+                dir: "ltr",
+                chatTitle: "🤖 Medizinischer KI-Assistent",
+                connStatus: "🟢 Live verbunden",
+                ttsOn: "🔊 Sprachleser: AN", ttsOff: "🔇 Sprachleser: AUS",
+                openMap: "🧍‍♂️ Schmerzbereich wählen",
+                intakeTitle: "🏥 Schnelle Patientenregistrierung",
+                intakeSub: "Bitte geben Sie Ihre Daten ein, um der KI und dem Arzt zu helfen:",
+                lblPhone: "📱 Telefonnummer:", phPhone: "z.B. 01012345678",
+                lblName: "👤 Vollständiger Name:", phName: "z.B. Max Mustermann", lblAge: "🎂 Alter:", phAge: "z.B. 35",
+                lblGender: "⚧ Geschlecht:", optMale: "Mann", optFemale: "Frau",
+                lblChronic: "💊 Chronische Krankheiten:", phChronic: "z.B. Bluthochdruck (oder: Keine)",
+                lblAllergies: "⚠️ Allergien:", phAllergies: "z.B. Penicillin (oder: Keine)",
+                btnStart: "🚀 KI-Triage jetzt starten",
+                mapTitle: "🧍‍♂️ Schmerzort auf dem Körper wählen", mapSub: "Klicken Sie auf den schmerzenden Bereich:",
+                partHead: "🧠 Kopf & Hals", partChest: "🫁 Brust & Lunge", partHeart: "❤️ Herz",
+                partAbdomen: "🍔 Bauch & Magen", partBack: "🦴 Rücken", partLimbs: "💪 Gelenke & Gliedmaßen",
+                mapCancel: "❌ Abbrechen", phInput: "Symptome hier eingeben oder sprechen...", phListening: "Zuhören... jetzt sprechen 🎧",
+                phMicError: "Mikrofonfehler...", btnFinish: "🏁 Beenden & Bericht an Arzt senden",
+                msgWelcome: "Hallo und herzlich willkommen. Welche Symptome haben Sie heute?",
+                typing: "KI analysiert und schreibt...", confirmFinish: "Möchten Sie den Endbericht jetzt an den Arzt senden?",
+                msgFinished: "🏁 Sitzung beendet und Bericht gesendet.", closedTitle: "✅ Bericht erfolgreich gesendet!",
+                closedSub: "Bitte warten Sie im Empfangsbereich.", btnReset: "🔄 Neuer Patient (Löschen)", confirmReset: "Löschen und neu beginnen?"
+            }
+        };
+
+        function applyLanguage(langCode) {
+            const shortLang = langCode.split('-')[0];
+            const dict = i18n[shortLang] || i18n['ar'];
+            currentUI = shortLang;
+            
+            const root = document.getElementById('html-root');
+            root.setAttribute('lang', shortLang);
+            root.setAttribute('dir', dict.dir);
+
+            document.getElementById('txt-chat-title').textContent = dict.chatTitle;
+            document.getElementById('connection-status').textContent = dict.connStatus;
+            document.getElementById('btn-open-map').textContent = dict.openMap;
+            
+            document.getElementById('txt-intake-title').textContent = dict.intakeTitle;
+            document.getElementById('txt-intake-sub').textContent = dict.intakeSub;
+            document.getElementById('lbl-phone').textContent = dict.lblPhone;
+            document.getElementById('patient-phone').placeholder = dict.phPhone;
+            document.getElementById('lbl-name').textContent = dict.lblName;
+            document.getElementById('patient-name').placeholder = dict.phName;
+            document.getElementById('lbl-age').textContent = dict.lblAge;
+            document.getElementById('patient-age').placeholder = dict.phAge;
+            document.getElementById('lbl-gender').textContent = dict.lblGender;
+            document.getElementById('opt-male').textContent = dict.optMale;
+            document.getElementById('opt-female').textContent = dict.optFemale;
+            document.getElementById('lbl-chronic').textContent = dict.lblChronic;
+            document.getElementById('patient-chronic').placeholder = dict.phChronic;
+            document.getElementById('lbl-allergies').textContent = dict.lblAllergies;
+            document.getElementById('patient-allergies').placeholder = dict.phAllergies;
+            document.getElementById('start-triage-btn').textContent = dict.btnStart;
+
+            document.getElementById('txt-map-title').textContent = dict.mapTitle;
+            document.getElementById('txt-map-sub').textContent = dict.mapSub;
+            document.getElementById('part-head').textContent = dict.partHead;
+            document.getElementById('part-chest').textContent = dict.partChest;
+            document.getElementById('part-heart').textContent = dict.partHeart;
+            document.getElementById('part-abdomen').textContent = dict.partAbdomen;
+            document.getElementById('part-back').textContent = dict.partBack;
+            document.getElementById('part-limbs').textContent = dict.partLimbs;
+            document.getElementById('btn-map-cancel').textContent = dict.mapCancel;
+
+            if (userInput) userInput.placeholder = dict.phInput;
+            const finishBtn = document.getElementById('finish-triage-btn');
+            if (finishBtn) finishBtn.textContent = dict.btnFinish;
+            if (typingIndicator) typingIndicator.textContent = dict.typing;
+            
+            const ttsToggleBtn = document.getElementById('tts-toggle');
+            if (ttsToggleBtn) ttsToggleBtn.innerHTML = window.isTTSActive ? dict.ttsOn : dict.ttsOff;
+
+            const closedHeading = document.querySelector('#input-area-container h4');
+            const closedPara = document.querySelector('#input-area-container p');
+            const resetBtn = document.getElementById('new-patient-reset-btn');
+            if (closedHeading) closedHeading.textContent = dict.closedTitle;
+            if (closedPara) closedPara.textContent = dict.closedSub;
+            if (resetBtn) resetBtn.textContent = dict.btnReset;
+
+            if (window.currentProfileData) {
+                window.currentProfileData.preferredLang = langCode;
+                saveSessionState();
+            }
+        }
+
+        langSelector.addEventListener('change', () => {
+            applyLanguage(langSelector.value);
+        });
+
+        // محرك ذاكرة المتصفح (LocalStorage Engine لمنع ضياع المحادثة مع F5)
+        function saveSessionState() {
+            if (!currentSessionMRN) return;
+            const chatElements = messagesContainer.querySelectorAll('.message');
+            const messages = [];
+            chatElements.forEach(el => {
+                messages.push({ text: el.textContent, isUser: el.classList.contains('user-msg') });
+            });
+            
+            const sessionData = {
+                mrn: currentSessionMRN,
+                profile: window.currentProfileData || {},
+                messages: messages,
+                isFinished: window.isTriageFinished || false,
+                lang: langSelector.value
+            };
+            localStorage.setItem('active_triage_session', JSON.stringify(sessionData));
+        }
+
+        function restoreSessionState() {
+            const savedJson = localStorage.getItem('active_triage_session');
+            if (!savedJson) {
+                applyLanguage(langSelector.value);
+                return;
+            }
+
+            try {
+                const session = JSON.parse(savedJson);
+                currentSessionMRN = session.mrn;
+                window.currentProfileData = session.profile;
+                window.isTriageFinished = session.isFinished;
+
+                if (session.lang) {
+                    langSelector.value = session.lang;
+                    applyLanguage(session.lang);
+                } else {
+                    applyLanguage(langSelector.value);
+                }
+
+                document.getElementById('intake-modal').style.display = 'none';
+                mrnBadge.textContent = `🪪 MRN: ${session.mrn}`;
+                mrnBadge.style.display = 'inline-block';
+
+                session.messages.forEach(m => { appendMessage(m.text, m.isUser, false); });
+
+                socket.emit('reconnect_patient_session', { mrn: currentSessionMRN });
+
+                if (window.isTriageFinished) {
+                    lockScreenAfterCompletion();
+                }
+                console.log(`🔄 [Session Restored]: MRN ${currentSessionMRN} (${langSelector.value})`);
+            } catch(e) {
+                console.error("خطأ في استرجاع الذاكرة، سيتم البدء من جديد.");
+                localStorage.removeItem('active_triage_session');
+                applyLanguage('ar-EG');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', restoreSessionState);
+
+        // تسجيل مريض جديد وحفظه في الذاكرة
+        document.getElementById('start-triage-btn').addEventListener('click', () => {
+            const phone = document.getElementById('patient-phone').value.trim();
+            const name = document.getElementById('patient-name').value.trim();
+            
+            if (!phone) { alert(currentUI === 'en' ? "Please enter phone number" : "يرجى إدخال رقم الهاتف للمتابعة"); return; }
+            if (!name) { alert(currentUI === 'en' ? "Please enter full name" : "يرجى كتابة الاسم بالكامل للمتابعة"); return; }
+            
+            const profileData = {
+                phone: phone,
+                name: name,
+                age: document.getElementById('patient-age').value.trim() || (currentUI === 'en' ? "Unspecified" : "غير محدد"),
+                gender: document.getElementById('patient-gender').value,
+                chronic: document.getElementById('patient-chronic').value.trim() || (currentUI === 'en' ? "None" : "لا يوجد"),
+                allergies: document.getElementById('patient-allergies').value.trim() || (currentUI === 'en' ? "None" : "لا يوجد"),
+                preferredLang: langSelector.value
+            };
+
+            window.currentProfileData = profileData;
+            socket.emit('patient_register_intake', profileData);
+        });
+
+        socket.on('intake_success', (data) => {
+            currentSessionMRN = data.mrn;
+            document.getElementById('intake-modal').style.opacity = '0';
+            setTimeout(() => { document.getElementById('intake-modal').style.display = 'none'; }, 500);
+            
+            mrnBadge.textContent = `🪪 MRN: ${data.mrn}`;
+            mrnBadge.style.display = 'inline-block';
+            
+            const dict = i18n[currentUI];
+            let welcomeMsg = "";
+            if (data.isReturning) {
+                welcomeMsg = currentUI === 'en' ? `Welcome back ${data.profile.name}! Your previous file #${data.mrn} has been restored. How can I help you today?` : `أهلاً بعودتك يا أستاذ/ة (${data.profile.name}). تم استرجاع ملفك الطبي رقم ${data.mrn}. كيف يمكنني مساعدتك اليوم؟`;
+            } else {
+                welcomeMsg = currentUI === 'en' ? `Welcome ${data.profile.name}. Medical file #${data.mrn} opened. How can I help you today?` : `أهلاً بك يا أستاذ/ة (${data.profile.name}). تم فتح ملف طبي برقم ${data.mrn}. كيف يمكنني مساعدتك اليوم؟`;
+            }
+            
+            appendMessage(welcomeMsg, false, true);
+            speakAI(welcomeMsg);
+            saveSessionState();
+        });
+
+        function lockScreenAfterCompletion() {
+            window.isTriageFinished = true;
+            saveSessionState();
+            const dict = i18n[currentUI];
+            
+            const inputContainer = document.getElementById('input-area-container');
+            inputContainer.innerHTML = `
+                <div style="background: #f0fdf4; border: 2px solid #22c55e; padding: 15px; border-radius: 12px; text-align: center; color: #15803d;">
+                    <h4 style="font-size: 1.1rem; margin-bottom: 5px;">${dict.closedTitle}</h4>
+                    <p style="font-size: 0.9rem; margin-bottom: 15px;">${dict.closedSub}</p>
+                    <button id="new-patient-reset-btn" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: inherit;">${dict.btnReset}</button>
+                </div>
+            `;
+
+            document.getElementById('new-patient-reset-btn').addEventListener('click', () => {
+                const confMsg = dict.confirmReset;
+                if (confirm(confMsg)) {
+                    localStorage.removeItem('active_triage_session');
+                    window.location.reload();
+                }
+            });
+        }
+
+        document.getElementById('finish-triage-btn').addEventListener('click', () => {
+            const dict = i18n[currentUI];
+            if (confirm(dict.confirmFinish)) {
+                socket.emit('finish_triage_session');
+                appendMessage(dict.msgFinished, true, true);
+                lockScreenAfterCompletion();
+            }
+        });
+
+        function selectBodyPart(partNameAr, partNameEn) {
+            const chosenName = currentUI === 'ar' ? partNameAr : partNameEn;
+            selectedBodyMapArea = chosenName;
+            document.getElementById('body-map-modal').style.display = 'none';
+            userInput.value = currentUI === 'en' ? `I suffer from pain in the (${chosenName}) area. ` : `أعاني من ألم ومشكلة في منطقة (${chosenName}). `;
+            userInput.focus();
+        }
+
+        function appendMessage(text, isUser = false, triggerSave = true) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isUser ? 'user-msg' : 'ai-msg'}`;
+            msgDiv.textContent = text;
+            messagesContainer.insertBefore(msgDiv, typingIndicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            if (triggerSave) saveSessionState();
+        }
+
+        function sendMessage() {
+            if (window.isTriageFinished) return;
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, true, true);
+            userInput.value = '';
+            typingIndicator.style.display = 'block';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            socket.emit('patient_send_message', { message: text, body_part: selectedBodyMapArea });
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        socket.on('ai_patient_reply', (data) => {
+            typingIndicator.style.display = 'none';
+            appendMessage(data.reply_text, false, true);
+            speakAI(data.reply_text);
+        });
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+
+            micBtn.addEventListener('click', () => {
+                if (window.isTriageFinished) return;
+                const selectedLang = langSelector.value || 'ar-EG';
+                recognition.lang = selectedLang;
+
+                recognition.start();
+                micBtn.classList.add('listening');
+                userInput.placeholder = i18n[currentUI].phListening;
+            });
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+                micBtn.classList.remove('listening');
+                userInput.placeholder = i18n[currentUI].phInput;
+                sendMessage();
+            };
+
+            recognition.onerror = () => {
+                micBtn.classList.remove('listening');
+                userInput.placeholder = i18n[currentUI].phMicError;
+            };
+        } else {
+            micBtn.style.display = 'none';
+        }
+
+        window.isTTSActive = true;
+        const ttsToggleBtn = document.getElementById('tts-toggle');
+
+        if (ttsToggleBtn) {
+            ttsToggleBtn.addEventListener('click', () => {
+                window.isTTSActive = !window.isTTSActive;
+                ttsToggleBtn.innerHTML = window.isTTSActive ? i18n[currentUI].ttsOn : i18n[currentUI].ttsOff;
+                ttsToggleBtn.style.background = window.isTTSActive ? "rgba(255,255,255,0.3)" : "rgba(239, 68, 68, 0.8)";
+                if (!window.isTTSActive && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+            });
+        }
+
+        function speakAI(text) {
+            if (!window.isTTSActive || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            const selectedLang = langSelector.value || 'ar-EG';
+            utterance.lang = selectedLang;
+            utterance.rate = 0.95;
+            
+            const voices = window.speechSynthesis.getVoices();
+            const matchedVoice = voices.find(v => v.lang.includes(selectedLang.split('-')[0]));
+            if (matchedVoice) utterance.voice = matchedVoice;
+
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+{
+  "patients": {
+    "d3HAE9j3vELp5QC3AAAF": {
+      "mrn": "MRN-2026-3810",
+      "name": "Moataz Shoman",
+      "age": "35",
+      "gender": "ذكر",
+      "chronic_diseases": "لا يوجد",
+      "allergies": "وجع في الفقرات اسفل الظهر",
+      "registered_at": "2026-07-14T12:10:22.554Z",
+      "socket_id": "d3HAE9j3vELp5QC3AAAF"
+    },
+    "MRN-2026-2007": {
+      "mrn": "MRN-2026-2007",
+      "name": "Moataz Shoman",
+      "age": "35",
+      "gender": "ذكر",
+      "chronic_diseases": "لا يوجد",
+      "allergies": "لا يوجد",
+      "registered_at": "2026-07-14T12:47:52.799Z",
+      "socket_id": "VTLCOcqtVNBECF1lAAAN",
+      "status": "Completed"
+    },
+    "MRN-2026-3814": {
+      "mrn": "MRN-2026-3814",
+      "name": "Moataz Shoman",
+      "age": "35",
+      "gender": "ذكر",
+      "chronic_diseases": "لا يوجد",
+      "allergies": "لا يوجد",
+      "registered_at": "2026-07-14T13:42:20.209Z",
+      "socket_id": "Qb-kVmHmJr-OHcywAAAR",
+      "status": "Completed"
+    },
+    "MRN-2026-9376": {
+      "mrn": "MRN-2026-9376",
+      "name": "Moataz Shoman",
+      "age": "35",
+      "gender": "ذكر",
+      "chronic_diseases": "لا يوجد",
+      "allergies": "لا يوجد",
+      "registered_at": "2026-07-14T13:43:37.835Z",
+      "socket_id": "_XrFUm350EYQiGEKAAAh",
+      "status": "Completed"
+    },
+    "MRN-2026-9191": {
+      "mrn": "MRN-2026-9191",
+      "name": "محمد علي",
+      "age": "22",
+      "gender": "ذكر",
+      "chronic_diseases": "سكر",
+      "allergies": "لا يوجد",
+      "registered_at": "2026-07-14T13:44:41.910Z",
+      "socket_id": "Ui6XXESVm2YIv63jAAAl",
+      "status": "In_Progress"
+    },
+    "MRN-2026-9970": {
+      "mrn": "MRN-2026-9970",
+      "phone": "0122222222",
+      "name": "منال احمد",
+      "age": "65",
+      "gender": "أنثى",
+      "chronic_diseases": "سكر , ضغط",
+      "allergies": "لا يوجد",
+      "registered_at": "2026-07-15T08:31:33.415Z",
+      "socket_id": "oXx7jXOvfwBVLu-vAAAF",
+      "status": "In_Progress"
+    },
+    "MRN-2026-6707": {
+      "mrn": "MRN-2026-6707",
+      "phone": "01096390510",
+      "name": "Moataz Shoman",
+      "age": "35",
+      "gender": "ذكر",
+      "chronic_diseases": "لا يوجد",
+      "allergies": "لا يوجد",
+      "registered_at": "2026-07-16T22:18:26.718Z",
+      "socket_id": "0Qcc6aHsePaOlHH0AAAF",
+      "status": "In_Progress"
+    }
+  },
+  "archives": [
+    {
+      "mrn": "MRN-2026-6707",
+      "name": "Moataz Shoman",
+      "phone": "01096390510",
+      "age": "35",
+      "timestamp": "١٧‏/٧‏/٢٠٢٦، ١:٢٤:٣٦ ص",
+      "triage_data": {
+        "chief_complaint": "Back pain and inquiry about analgesics",
+        "symptoms_timeline": "Duration not yet specified; patient is seeking immediate pain relief advice.",
+        "red_flags_detected": [],
+        "ai_clinical_summary": "35-year-old male with no chronic conditions presents with back pain. Patient is inquiring about self-administering analgesics. I have advised waiting for clinical instruction and am currently screening for radiculopathy or neurological deficits.",
+        "recommended_specialty": "Orthopedics",
+        "differential_diagnosis": [
+          {
+            "condition": "Mechanical Back Pain",
+            "probability": "High"
+          },
+          {
+            "condition": "Lumbar Disc Herniation",
+            "probability": "Medium"
+          }
+        ],
+        "suggested_action": "Physical examination and neurological assessment of lower limbs."
+      },
+      "status": "In_Progress"
+    },
+    {
+      "mrn": "MRN-2026-9970",
+      "name": "منال احمد",
+      "phone": "0122222222",
+      "age": "65",
+      "timestamp": "١٥‏/٧‏/٢٠٢٦، ٨:٣٤:٤٣ ص",
+      "triage_data": {
+        "chief_complaint": "Blurred vision and intermittent headache in a diabetic and hypertensive patient",
+        "symptoms_timeline": "Persistent but intermittent symptoms; patient claims medication adherence.",
+        "red_flags_detected": [
+          "Blurred vision",
+          "Headache in hypertensive patient",
+          "Geriatric patient with multiple comorbidities"
+        ],
+        "ai_clinical_summary": "65-year-old female with DM and HTN presenting with blurred vision and intermittent headaches. Despite reporting medication compliance, the combination of symptoms in a hypertensive/diabetic patient necessitates urgent screening for hypertensive urgency or glycemic dysregulation.",
+        "recommended_specialty": "Internal Medicine",
+        "differential_diagnosis": [
+          {
+            "condition": "Hypertensive Urgency",
+            "probability": "High"
+          },
+          {
+            "condition": "Hyperglycemia/Hypoglycemia",
+            "probability": "Medium"
+          },
+          {
+            "condition": "Diabetic Retinopathy",
+            "probability": "Medium"
+          }
+        ],
+        "suggested_action": "Immediate measurement of Blood Pressure and Random Blood Glucose (RBG)."
+      },
+      "status": "In_Progress"
+    },
+    {
+      "mrn": "MRN-2026-9376",
+      "name": "Moataz Shoman",
+      "age": "35",
+      "timestamp": "١٤‏/٧‏/٢٠٢٦، ١:٤٧:١٦ م",
+      "triage_data": {
+        "chief_complaint": "Patient confirmed no current medications; primary complaint pending.",
+        "symptoms_timeline": "Not yet provided.",
+        "red_flags_detected": [],
+        "ai_clinical_summary": "The patient, Moataz Shoman (35), reports no chronic diseases or allergies and is not currently on any medications. The specific reason for the consultation has not been stated yet. I am currently eliciting the chief complaint and duration of symptoms.",
+        "recommended_specialty": "General Medicine",
+        "differential_diagnosis": [],
+        "suggested_action": "Identify the chief complaint and history of present illness."
+      },
+      "status": "Completed"
+    },
+    {
+      "mrn": "MRN-2026-3810",
+      "name": "Moataz Shoman",
+      "age": "35",
+      "timestamp": "١٤‏/٧‏/٢٠٢٦، ١٢:١٥:٥٦ م",
+      "triage_data": {
+        "chief_complaint": "Lower limb numbness triggered by standing",
+        "symptoms_timeline": "Chronic lower back pain history; current numbness is positional (standing).",
+        "red_flags_detected": [],
+        "ai_clinical_summary": "35-year-old male with a history of lower back pain presenting with paresthesia in the lower extremity exacerbated by standing. Symptoms suggest possible nerve root compression or lumbar radiculopathy. No red flags reported yet, but screening for cauda equina symptoms is underway.",
+        "recommended_specialty": "Orthopedics",
+        "differential_diagnosis": [
+          {
+            "condition": "Lumbar Disc Herniation",
+            "probability": "High"
+          },
+          {
+            "condition": "Lumbar Spinal Stenosis",
+            "probability": "Medium"
+          },
+          {
+            "condition": "Sciatica",
+            "probability": "High"
+          }
+        ],
+        "suggested_action": "Perform Straight Leg Raise (SLR) test and assess lower limb dermatomes and myotomes."
+      }
+    }
+  ],
+  "socketToMrn": {
+    "qRi5-k5E1gPFxc7fAAAJ": "MRN-2026-2007",
+    "e8PfKwoyt_sCAz9KAAAL": "MRN-2026-2007",
+    "VTLCOcqtVNBECF1lAAAN": "MRN-2026-2007",
+    "Qb-kVmHmJr-OHcywAAAR": "MRN-2026-3814",
+    "Kut3UuHtk8h5GDD_AAAV": "MRN-2026-9376",
+    "86dvYeg4DmxXHWyPAAAZ": "MRN-2026-9376",
+    "-y1d2M9-55bN4cUCAAAb": "MRN-2026-9191",
+    "eBqcppMsGKOfUM3VAAAd": "MRN-2026-9376",
+    "Pu5KHpt-LAn2ORclAAAf": "MRN-2026-9376",
+    "_XrFUm350EYQiGEKAAAh": "MRN-2026-9376",
+    "Ui6XXESVm2YIv63jAAAl": "MRN-2026-9191",
+    "oXx7jXOvfwBVLu-vAAAF": "MRN-2026-9970",
+    "0Qcc6aHsePaOlHH0AAAF": "MRN-2026-6707"
+  }
+}
