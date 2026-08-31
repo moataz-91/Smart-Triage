@@ -312,6 +312,20 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 🟢 الإصلاح: بيبعت للدكتور كل الحالات النشطة أول ما يفتح الصفحة أو يعمل ريفريش
+    // (قبل كده الداشبورد كانت بتفضل فاضية لحد أول رسالة جديدة "live")
+    socket.on('request_active_queue', () => {
+        const activePatients = Object.values(db.patients).filter(p => p.status === 'In_Progress');
+        console.log(`📋 [Active Queue Requested]: بعتنا ${activePatients.length} حالة نشطة لـ Socket ${socket.id}`);
+        activePatients.forEach(p => {
+            const archiveRec = db.archives.find(a => a.mrn === p.mrn);
+            socket.emit('doctor_dashboard_update', {
+                ...(archiveRec ? archiveRec.triage_data : {}),
+                patient_profile: p
+            });
+        });
+    });
+
     socket.on('disconnect', () => {
         console.log(`🔴 [Disconnected]: Socket ID -> ${socket.id}`);
     });
@@ -322,5 +336,3 @@ server.listen(PORT, () => {
     console.log(`🚀 Smart-AI-Triage Server is running isolated on http://localhost:${PORT}`);
     console.log(`🔍 للفحص والتأكد من عمل الـ AI افتح: http://localhost:${PORT}/test-ai`);
 });
-
-
