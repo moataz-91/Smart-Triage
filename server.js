@@ -64,7 +64,7 @@ app.get('/test-ai', async (req, res) => {
     try {
         const testPrompt = `${SYSTEM_PROMPT}\n\nPatient Message: "أنا عندي صداع شديد بقاله يومين"\n\nGenerate JSON:`;
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-1.5-flash',
             contents: testPrompt,
             config: { responseMimeType: "application/json", temperature: 0.3 }
         });
@@ -132,7 +132,7 @@ io.on('connection', (socket) => {
             const enrichedPrompt = `${SYSTEM_PROMPT}\n\nPATIENT PROFILE: MRN: ${patient.mrn} | Name: ${patient.name} | Age: ${patient.age} | Chronic: ${patient.chronic_diseases} | Allergies: ${patient.allergies} | Body Part: ${body_part || "General"}\nPatient Message: "${message}"\nGenerate JSON:`;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-1.5-flash',
                 contents: enrichedPrompt,
                 config: { responseMimeType: "application/json", temperature: 0.3 }
             });
@@ -187,7 +187,7 @@ io.on('connection', (socket) => {
         try {
             const scribePrompt = `${SYSTEM_PROMPT}\n\nDOCTOR NOTES: "${doctor_notes}". Synthesize to JSON.`;
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', contents: scribePrompt,
+                model: 'gemini-1.5-flash', contents: scribePrompt,
                 config: { responseMimeType: "application/json", temperature: 0.2 }
             });
             const parsedData = JSON.parse(response.text);
@@ -204,7 +204,7 @@ io.on('connection', (socket) => {
         try {
             const prompt = `${SYSTEM_PROMPT}\n\nURGENT INSTRUCTION: Ask the patient: "${instruction}"\nGenerate JSON:`;
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', contents: prompt,
+                model: 'gemini-1.5-flash', contents: prompt,
                 config: { responseMimeType: "application/json", temperature: 0.3 }
             });
             const parsedData = JSON.parse(response.text);
