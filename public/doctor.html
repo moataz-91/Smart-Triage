@@ -42,7 +42,12 @@
         .red-flags-container { display: flex; flex-wrap: wrap; gap: 10px; }
         .flag-tag { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 8px 14px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 6px; animation: bounceIn 0.5s; }
         .no-flags { background: #dcfce7; color: #16a34a; border: 1px solid #86efac; padding: 8px 14px; border-radius: 8px; font-weight: bold; }
+        @keyframes bounceIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
+        /* تأثير الطوارئ لزر المريض */
+        .emergency-pulse { animation: emergencyGlow 1.5s infinite !important; border: 2px solid #ef4444 !important; }
+        @keyframes emergencyGlow { 0% { box-shadow: 0 0 5px #ef4444; } 50% { box-shadow: 0 0 20px #ef4444, inset 0 0 10px #fca5a5; } 100% { box-shadow: 0 0 5px #ef4444; } }
+
         /* جدول التشخيص المبدئي */
         .diag-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
         .diag-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 12px 16px; border-radius: 10px; border: 1px solid #e2e8f0; }
@@ -223,7 +228,7 @@
 
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
-        // 🟢 سكريبت الحماية من السرقة (Anti-Theft Protection)
+        // 🟢 سكريبت الحماية من السرقة
         document.addEventListener('contextmenu', event => event.preventDefault()); 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'F12' || 
@@ -234,18 +239,27 @@
         });
 
         const socket = io("http://78.47.133.206:4000"); 
+
+        // 🟢 الإصلاح: لما الدكتور يفتح الصفحة أو يعمل ريفريش، نطلب من السيرفر كل الحالات
+        // النشطة اللي اتسجلت قبل كده — من غيره القايمة بتفضل فاضية لحد أول رسالة جديدة "live"
+        socket.on('connect', () => {
+            console.log('🔌 [Connected] بطلب قائمة المرضى النشطين دلوقتي...');
+            socket.emit('request_active_queue');
+        });
         
         let currentSpecialty = "General Medicine";
         let currentPatientMRN = null;
         let currentLang = 'en';
         
-        // متغيرات إدارة قائمة الانتظار التفاعلية لحل مشكلة التزامن وتعدد المرضى
         window.activePatientsMap = {}; 
         window.lockedMRN = null;
         
         const clinicFilter = document.getElementById('clinic-filter');
         const routingCard = document.getElementById('routing-card');
         const routingStatus = document.getElementById('routing-status');
+
+        // 🟢 ميزة التنبيه الصوتي عند وصول مريض جديد أو تحديث طارئ
+        const notificationSound = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
 
         const i18n = {
             en: {
@@ -510,15 +524,19 @@
                 const pName = pData.patient_profile ? pData.patient_profile.name : "Unknown Patient";
                 const isSelected = (window.lockedMRN === mrn);
                 const hasNewMsg = pData.hasUnreadUpdate;
+                
+                // 🔴 ميزة رادار الطوارئ: تلوين الزر بالأحمر لو فيه Red Flags
+                const hasRedFlags = pData.red_flags_detected && pData.red_flags_detected.length > 0;
+                let btnStyle = isSelected ? 'background: #0284c7; color: white; border: 2px solid #0369a1; box-shadow: 0 4px 6px rgba(2,132,199,0.3);' : 'background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;';
+                
+                let extraClass = hasRedFlags && !isSelected ? "emergency-pulse" : "";
 
                 const btn = document.createElement('button');
-                btn.style.cssText = `
-                    padding: 8px 15px; border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; font-family: inherit;
-                    ${isSelected ? 'background: #0284c7; color: white; border: 2px solid #0369a1; box-shadow: 0 4px 6px rgba(2,132,199,0.3);' : 'background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;'}
-                `;
+                btn.style.cssText = `padding: 8px 15px; border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; font-family: inherit; ${btnStyle}`;
+                if (extraClass) btn.classList.add(extraClass);
                 
                 btn.innerHTML = `
-                    ${hasNewMsg && !isSelected ? '<span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: inline-block; animation: pulse 1s infinite;"></span>' : '🟢'}
+                    ${hasNewMsg && !isSelected ? '<span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: inline-block; animation: pulse 1s infinite;"></span>' : (hasRedFlags ? '🚨' : '🟢')}
                     <span>${pName} (${mrn})</span>
                 `;
 
@@ -595,7 +613,14 @@
         // المعالج المطور لاستقبال البيانات ومنع التداخل في نفس الغرفة
         function handleIncomingTriageData(data) {
             const mrn = data.patient_profile?.mrn || "MRN-UNKNOWN";
+            const isNewPatient = !window.activePatientsMap[mrn];
+            
             window.activePatientsMap[mrn] = data;
+
+            // 🔊 تشغيل تنبيه صوتي لو المريض جديد أو فيه تحديث طارئ ومفيش مريض مفتوح
+            if (isNewPatient) {
+                notificationSound.play().catch(e => console.log("Audio play prevented by browser policy"));
+            }
 
             if (!window.lockedMRN || window.lockedMRN === mrn) {
                 window.lockedMRN = mrn;
@@ -613,9 +638,12 @@
 
         socket.on('doctor_patient_profile_update', (profile) => {
             currentPatientMRN = profile.mrn;
+            
             if (!window.activePatientsMap[profile.mrn]) {
                 window.activePatientsMap[profile.mrn] = { patient_profile: profile };
+                notificationSound.play().catch(e => console.log("Audio alert blocked"));
             }
+
             if (!window.lockedMRN) {
                 window.lockedMRN = profile.mrn;
                 loadPatientToScreen(window.activePatientsMap[profile.mrn]);
